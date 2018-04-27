@@ -5,6 +5,7 @@
 //  Created by Morgan Meliment on 4/23/18.
 //
 #include "Moustache.hpp"
+#include <math.h>
 using namespace cv;
 using namespace ofxCv;
 
@@ -16,7 +17,7 @@ void Moustache::setNoseVertices(ofPolyline nose) {
     noseVertices = nose;
 }
 
-std::vector<ofPoint> rotatePoints(std::vector<ofPoint> points) {
+std::vector<ofPoint> Moustache::rotatePoints(std::vector<ofPoint> points) {
     ofPoint firstPoint = points.at(0);
     ofPoint lastPoint = points.back();
     double x1 = firstPoint.x, y1 = firstPoint.y, x2 = lastPoint.x, y2 = lastPoint.y;
@@ -34,6 +35,8 @@ std::vector<ofPoint> rotatePoints(std::vector<ofPoint> points) {
         rotatedPoints.push_back(point);
     }
     
+    angleOfRotation = theta;
+    
     return rotatedPoints;
 }
 
@@ -46,11 +49,22 @@ double getHeightAtXCoordinate(std::vector<ofPoint> points, int xCoor) {
         i++;
     }
     
-    double x = x - (points.at(i - 1).x - points.at(0).x);
+    double x = xCoor - (points.at(i - 1).x - points.at(0).x);
     double theta = -cvFastArctan((points.at(i).y - points.at(i - 1).y),
                                  (points.at(i).x - points.at(i - 1).x)) * ((2 * pi) / 360);
     
-    return (tan(theta) * x) - (points.at(i - 1).y - points.at(0).y);
+    double mHeight = (tan(theta) * x) - (points.at(i - 1).y - points.at(0).y);
+    double heightDiff = points.at(i - 1).y - points.at(i).y;
+    if (heightDiff < 0) {
+        heightDiff = -heightDiff;
+        x = (points.at(i).x - points.at(i - 1).x) - x + 3;
+    } else {
+        x += 3;
+    }
+    double sigmoidValue = (8.0/heightDiff)*x - 3.5 - (heightDiff/10.0);
+    double heightMultiplier = 1 / (1 + exp(-sigmoidValue));
+    std::cout << "Sigmoid: " << heightMultiplier << " : " << xCoor << std::endl;
+    return mHeight * heightMultiplier;
 }
 
 void Moustache::morphMoustache(std::vector<ofPoint> points) {
@@ -65,8 +79,10 @@ void Moustache::morphMoustache(std::vector<ofPoint> points) {
     }
     int moustacheWidth = (rotatedPoints.back().x - rotatedPoints.front().x) + 2 * extraWidth;
     int moustacheHeight = height + (rotatedPoints.front().y - highestPoint.y);
+    //std::cout << height << " : " << moustacheHeight << std::endl;
     
-    std::cout << (rotatedPoints.front().y - highestPoint.y) << std::endl;
+    //std::cout << (rotatedPoints.front().y - highestPoint.y) << std::endl;
+    moustacheImage.load(moustachePath);
     moustacheImage.resize(moustacheWidth, height);
 
     ofEnableAlphaBlending();
@@ -82,21 +98,29 @@ void Moustache::morphMoustache(std::vector<ofPoint> points) {
         for (int j = 0; j < moustacheImage.getHeight(); j++) {
             if (moustacheImage.getColor(i, j) != transparent) {
                 if (i >= extraWidth && i < moustacheWidth - extraWidth) {
-                    image.setColor(i + 10, j + 20 - 0 * getHeightAtXCoordinate(rotatedPoints, i - extraWidth), ofColor(0, 0, 0, 255));
+                    image.setColor(i + 10, j + 15 - getHeightAtXCoordinate(rotatedPoints, i - extraWidth), ofColor(0, 0, 0, 255));
+                    
+                    //std::cout << getHeightAtXCoordinate(rotatedPoints, i - extraWidth) << std::endl;
                 } else {
-                    image.setColor(i + 10, j + 20, moustacheImage.getColor(i, j));
+                    image.setColor(i + 10, j + 15, moustacheImage.getColor(i, j));
                 }
             } else {
-                image.setColor(i + 10, j + 20, transparent);
+                image.setColor(i + 10, j + 15, transparent);
             }
         }
     }
     morphedImage->setFromPixels(image);
     morphedImage->update();
-    morphedImage->draw(rotatedPoints.at(0).x - extraWidth - 10, rotatedPoints.at(0).y - height + 5);
-    
-    ofMesh* moustache = new ofMesh(OF_PRIMITIVE_LINE_STRIP, rotatedPoints);
-    moustache->draw();
+    ofPushMatrix();
+    ofTranslate(rotatedPoints.at(0).x - extraWidth - 10, rotatedPoints.at(0).y, 0);//move pivot to centre
+    ofRotate(-angleOfRotation * (360 / (2 * pi)), 0, 0, 1);//rotate from centre
+    ofPushMatrix();
+    //ofTranslate(-leafImg.width/2,-leafImg.height/2,0);//move back by the centre offset
+    //leafImg.draw(0,0);
+    morphedImage->draw(0, -height + 5);
+    ofPopMatrix();
+    //ofMesh* moustache = new ofMesh(OF_PRIMITIVE_LINE_STRIP, rotatedPoints);
+    //moustache->draw();
 }
 
 void Moustache::draw() {
@@ -127,15 +151,11 @@ void Moustache::draw() {
                 }
             }
             
-            //std::cout << "x1: " << closestOnEdge.x << std::endl;
-            //std::cout << "x2: " << upperLipEdge.back().x << std::endl;
-            
             if ((closestOnEdge.x == upperLipEdge.back().x
                 && closestOnEdge.y == upperLipEdge.back().y)
                 || std::find(upperLipEdge.begin(), upperLipEdge.end(), closestOnEdge)
                 != upperLipEdge.end()) {
                 isEdgeFinished = true;
-                //std::cout << upperLipEdge.size() << std::endl;
             } else {
                 closestOnEdge.set(closestOnEdge.x, closestOnEdge.y - 15);
                 upperLipEdge.push_back(closestOnEdge);

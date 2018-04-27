@@ -21,7 +21,10 @@ public:
     void setNoseVertices(ofPolyline nose);
     void draw();
     ofImage moustacheImage;
+    std::string moustachePath;
     ofImage* morphedImage = new ofImage();
+    double angleOfRotation = 0.0;
+    std::vector<ofPoint> rotatePoints(std::vector<ofPoint> points);
 private:
     ofPolyline mouthVertices;
     ofPolyline noseVertices;

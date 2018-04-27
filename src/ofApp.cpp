@@ -7,6 +7,7 @@ void ofApp::setup(){
     cam.setup(640, 480);
     tracker.setup();
     moustache.moustacheImage.load("images/moustache.png");
+    moustache.moustachePath = "images/moustache.png";
 }
 
 //--------------------------------------------------------------
@@ -26,13 +27,12 @@ void ofApp::update(){
 void ofApp::draw(){
     ofSetColor(255);
     int minh = ofGetHeight();
+    
     if (minh < (ofGetWidth() * 9 / 16)) {
         minh = ofGetWidth() * 9 / 16;
     }
     int minw = minh * 16 / 9;
-    //std::cout << minh << std::endl;
     cam.draw(minw + ((ofGetWidth() - minw) / 2), ((ofGetHeight() - minh) / 2), -minw, minh);
-    //cam.draw(0, 0);
     ofDrawBitmapString(ofToString((int) ofGetFrameRate()), 10, 20);
     
     if(tracker.getFound()) {
@@ -45,21 +45,8 @@ void ofApp::draw(){
         
         bounds = mouth.getBoundingBox();
         
-        
-        /*ofSetupScreenOrtho(minw, minh, -1000, 1000);
-        ofTranslate(ofGetWidth() / 2, ofGetHeight() / 2);
-        
-        ofPushMatrix();
-        ofScale(5,5,5);
-        tracker.getObjectMesh().drawWireframe();
-        ofPopMatrix();
-        
-        applyMatrix(rotationMatrix);
-        ofScale(5,5,5);
-        tracker.getObjectMesh().drawWireframe();*/
     }
     moustache.draw();
-    //
 }
 
 //--------------------------------------------------------------
