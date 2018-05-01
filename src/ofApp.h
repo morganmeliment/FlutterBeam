@@ -20,6 +20,7 @@ class ofApp : public ofBaseApp{
         ofVideoGrabber cam;
         Moustache moustache;
         ofRectangle bounds;
+        ofImage logo;
 		
         ofxFaceTracker tracker;
         ofVec2f position;

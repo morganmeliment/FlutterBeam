@@ -22,9 +22,11 @@ public:
     void draw();
     ofImage moustacheImage;
     std::string moustachePath;
+    ofImage moustacheTexture;
     ofImage* morphedImage = new ofImage();
     double angleOfRotation = 0.0;
     std::vector<ofPoint> rotatePoints(std::vector<ofPoint> points);
+    double getDistanceFromMouthToNose();
 private:
     ofPolyline mouthVertices;
     ofPolyline noseVertices;
