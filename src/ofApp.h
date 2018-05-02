@@ -4,6 +4,7 @@
 #include "ofxCv.h"
 #include "ofxFaceTracker.h"
 #include "Moustache.hpp"
+#include <cstdlib>
 
 using namespace ofxCv;
 using namespace cv;
@@ -16,11 +17,13 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void keyPressed(int key);
+        void mouseReleased(int x, int y, int button);
     
         ofVideoGrabber cam;
         Moustache moustache;
         ofRectangle bounds;
         ofImage logo;
+        ofImage moustachePicker;
 		
         ofxFaceTracker tracker;
         ofVec2f position;

@@ -17,6 +17,10 @@ void Moustache::setNoseVertices(ofPolyline nose) {
     noseVertices = nose;
 }
 
+void Moustache::setFaceVertices(ofPolyline face) {
+    faceVertices = face;
+}
+
 std::vector<ofPoint> Moustache::rotatePoints(std::vector<ofPoint> points) {
     ofPoint firstPoint = points.at(0);
     ofPoint lastPoint = points.back();
@@ -69,7 +73,42 @@ double getHeightAtXCoordinate(std::vector<ofPoint> points, int xCoor) {
 }
 
 double Moustache::getDistanceFromMouthToNose() {
+    std::vector<ofPoint> nosePoints = noseVertices.getVertices();
+    ofPoint lowestNosePoint = nosePoints.at(0);
     
+    for (ofPoint point : nosePoints) {
+        if (point.y > lowestNosePoint.y) {
+            lowestNosePoint = point;
+        }
+    }
+    
+    std::vector<ofPoint> mouthPoints = mouthVertices.getVertices();
+    ofPoint highestMouthPoint = mouthPoints.at(0);
+    
+    for (ofPoint point : mouthPoints) {
+        if (point.y < highestMouthPoint.y) {
+            highestMouthPoint = point;
+        }
+    }
+    
+    return abs(lowestNosePoint.y - highestMouthPoint.y);
+}
+
+double Moustache::getWidthOfFace() {
+    std::vector<ofPoint> facePoints = faceVertices.getVertices();
+    ofPoint leftMostPoint = facePoints.at(0);
+    ofPoint rightMostPoint = facePoints.at(0);
+    
+    for (ofPoint point : facePoints) {
+        if (point.x < leftMostPoint.x) {
+            leftMostPoint = point;
+        }
+        if (point.x > rightMostPoint.x) {
+            rightMostPoint = point;
+        }
+    }
+    
+    return abs(rightMostPoint.x - leftMostPoint.x);
 }
 
 void Moustache::morphMoustache(std::vector<ofPoint> points) {
@@ -122,7 +161,8 @@ void Moustache::morphMoustache(std::vector<ofPoint> points) {
     ofPushMatrix();
     ofTranslate((points.at(0).x + points.back().x) / 2, (points.at(0).y + points.back().y) / 2, 0);//move pivot to centre
     ofRotate(-angleOfRotation * (360 / (2 * pi)), 0, 0, 1);//rotate from centre
-    ofScale(2, 2);
+    ofScale((1 + (getWidthOfFace() / 200)) / 2, (1 + (getDistanceFromMouthToNose() / 17)) / 2);
+    //std::cout << moustacheImage.getHeight() << std::endl;
     //ofTranslate(-leafImg.width/2,-leafImg.height/2,0);//move back by the centre offset
     //leafImg.draw(0,0);
     /*for (int u = -5; u < 5; u++) {
@@ -131,7 +171,7 @@ void Moustache::morphMoustache(std::vector<ofPoint> points) {
                            image.getColor(i + 10, j + 15 - getHeightAtXCoordinate(rotatedPoints, i - extraWidth)) + (moustacheTexture.getColor(u + 5, n + 5) / 5));
         }
     }*/
-    morphedImage->draw(-(morphedImage->getWidth()/2), -(morphedImage->getHeight()/2) - 15);
+    morphedImage->draw(-(morphedImage->getWidth()/2), -(morphedImage->getHeight()/2) - heightOffset / ((1 + (getDistanceFromMouthToNose() / 17)) / 2));
    /* int textureWidth = 5;
     int textureHeight = 5;
     for (int i = 0; i < morphedImage->getWidth(); i += textureWidth) {
