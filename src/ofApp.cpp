@@ -123,6 +123,8 @@ void ofApp::keyPressed(int key){
         // Reset the facial recognition tracker. (Sometimes it stops working fully)
         tracker.reset();
     } else if (key == ' ') {
+        // Handle taking a picture and saving it to the desktop.
+        
         // Create a temporary file to check if the filepath is available.
         ofFile tempFile = ofFile(generateScreenShotFilePath());
         
@@ -146,68 +148,110 @@ void ofApp::keyPressed(int key){
         }
         int minw = minh * 16 / 9;
         
+        // Calculate the offset to match the webcam output to the screenshot.
         int iOffset = abs((ofGetWidth() - minw) / 2);
         int jOffset = abs((ofGetHeight() - minh) / 2);
+        
+        // Resize the camera output to line up with the screenshot.
         cameraPixels.resize(minw, minh);
+        
+        // Create a new image meshing these two together. The webcam output is used to cover up
+        // the UI elements from the screenshot.
         ofImage cameraPicture = ofImage();
         cameraPicture.allocate(ofGetWidth(), ofGetHeight(), OF_IMAGE_COLOR_ALPHA);
         cameraPicture.setFromPixels(cameraPixels);
         cameraPicture.update();
         
+        // Calculate dimensions of the picker on screen.
         int pickerHeight = (ofGetHeight() * 0.4) + 50;
         int pickerWidth = (pickerHeight / moustachePicker.getHeight()) * moustachePicker.getWidth();
 
+        // Start the reconstruction of the final image.
         ofImage finalImage = ofImage();
         finalImage.allocate(ofGetWidth(), ofGetHeight(), OF_IMAGE_COLOR_ALPHA);
         
+        // Calculate dimensions of the logo on screen.
         int logoWidth = (ofGetWidth() * 0.2) + 20;
         int logoHeight = (logoWidth / logo.getWidth()) * logo.getHeight();
         
+        // Reconstruct the final images from our two composite images.
         for (int i = 0; i < finalImage.getWidth(); i++) {
             for (int j = 0; j < finalImage.getHeight(); j++) {
                 if ((i >= 20 && i <= 20 + pickerWidth) && (j >= (ofGetHeight() - pickerHeight) / 2 && j <= ofGetHeight() - (ofGetHeight() - pickerHeight) / 2)) {
+                    // Get and set the color from the shifted webcam output.
                     finalImage.setColor(i, j, cameraPicture.getColor(i + iOffset, j + jOffset));
                 } else if (i >= ofGetWidth() - logoWidth && j >= ofGetHeight() - logoHeight) {
+                    // Get and set the color from the shifted webcam output.
                     finalImage.setColor(i, j, cameraPicture.getColor(i + iOffset, j + jOffset));
                 } else {
+                    // Get and set the color from the screenshot.
                     finalImage.setColor(i, j, screenShotImage.getColor(i, j));
                 }
             }
         }
         finalImage.update();
         
+        // Save the reconstructed image to the unique filepath we found earlier.
         finalImage.save(tempFile.path());
-        //tempFile.create();
     }
 }
 
+/**
+ * Handle when the user clicks button 1 on the toolbar.
+ */
+void ofApp::button1Action() {
+    moustache.moustacheImage.load("images/colorStache.png");
+    moustache.moustacheTexture.load("images/colorStache.png");
+    moustache.moustachePath = "images/colorStache.png";
+    moustache.heightOffset = 15;
+}
+
+/**
+ * Handle when the user clicks button 2 on the toolbar.
+ */
+void ofApp::button2Action() {
+    moustache.moustacheImage.load("images/moustache.png");
+    moustache.moustacheTexture.load("images/moustache.png");
+    moustache.moustachePath = "images/moustache.png";
+    moustache.heightOffset = 15;
+}
+
+/**
+ * Handle when the user clicks button 3 on the toolbar.
+ */
+void ofApp::button3Action() {
+    moustache.moustacheImage.load("images/uglyStache.png");
+    moustache.moustacheTexture.load("images/uglyStache.png");
+    moustache.moustachePath = "images/uglyStache.png";
+    moustache.heightOffset = 20;
+}
+
+/**
+ * Detect button clicks for our UI elements. Custom built for this project.
+ */
 void ofApp::mouseReleased(int x, int y, int button) {
+    // Calculate the picker dimensions.
     int pickerHeight = (ofGetHeight() * 0.4) + 50;
     int pickerWidth = (pickerHeight / moustachePicker.getHeight()) * moustachePicker.getWidth();
+    
+    // Get standard aspects of the image to make it easier to calculate clickable bounds later.
     double baseHeight = (ofGetHeight() - moustachePicker.getHeight()) / 2;
     double divHeight = pickerHeight * 0.05;
     double circleHeight = (moustachePicker.getHeight() - 4 * divHeight) / 3;
     double leftBound = 20 + pickerWidth * 0.1;
     double rightBound = 20 + pickerWidth * 0.9;
+    
+    // Check if the mouse click was within the bounds we specified.
     if (leftBound < x && rightBound > x) {
         if (baseHeight + divHeight <= y
             && y <= baseHeight + divHeight + circleHeight) {
-            moustache.moustacheImage.load("images/colorStache.png");
-            moustache.moustacheTexture.load("images/colorStache.png");
-            moustache.moustachePath = "images/colorStache.png";
-            moustache.heightOffset = 15;
+            button1Action();
         } else if (baseHeight + 2 * divHeight + circleHeight <= y
                    && y <= baseHeight + 2 * divHeight + 2 * circleHeight) {
-            moustache.moustacheImage.load("images/moustache.png");
-            moustache.moustacheTexture.load("images/moustache.png");
-            moustache.moustachePath = "images/moustache.png";
-            moustache.heightOffset = 15;
+            button2Action();
         } else if (baseHeight + 3 * divHeight + 2 * circleHeight <= y
                    && y <= baseHeight + 3 * divHeight + 3 * circleHeight) {
-            moustache.moustacheImage.load("images/uglyStache.png");
-            moustache.moustacheTexture.load("images/uglyStache.png");
-            moustache.moustachePath = "images/uglyStache.png";
-            moustache.heightOffset = 20;
+            button3Action();
         }
     }
 }
